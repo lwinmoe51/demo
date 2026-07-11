@@ -3,13 +3,23 @@ export const Feature1Component = async () => {
     let description = "Feature 1 description (Fallback)";
 
     try {
-        // Component တစ်ခုချင်းစီက သူ့ API နဲ့သူ သီးသန့်ခေါ်ယူမည်
-        const response = await fetch("http://localhost:5000/api/feature1");
+        console.log(
+            "[Feature1] Fetching from https://demo-backend.lwinmoe969786.workers.dev/api/feature1",
+        );
+        const response = await fetch(
+            "https://demo-backend.lwinmoe969786.workers.dev/api/feature1",
+        );
+        console.log(`[Feature1] Response status: ${response.status}`);
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errText}`);
+        }
         const data = await response.json();
+        console.log("[Feature1] Data received:", data);
         title = data.title;
         description = data.description;
     } catch (error) {
-        console.warn("Feature 1 API သို့ ချိတ်ဆက်၍မရပါ။");
+        console.error("[Feature1] Error:", error.message);
     }
 
     return `

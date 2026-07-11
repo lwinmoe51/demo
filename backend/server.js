@@ -1,61 +1,81 @@
-const express = require("express");
-const sqlite3 = require("sqlite3").verbose();
-const cors = require("cors");
-require("dotenv").config();
+export default {
+    async fetch(request, env) {
+        const url = new URL(request.url);
 
-const app = express();
-app.use(cors()); // Frontend မှ Cross-Origin ခေါ်ယူခွင့်ပေးရန်
-app.use(express.json());
+        // CORS Header သတ်မှတ်ခြင်း (Frontend မှ လှမ်းခေါ်ခွင့်ပေးရန်)
+        const corsHeaders = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+        };
 
-const PORT = process.env.PORT || 5000;
-const DB_PATH = process.env.DB_FILE;
+        if (request.method === "OPTIONS") {
+            return new Response(null, { headers: corsHeaders });
+        }
 
-// Database Connection
-const db = new sqlite3.Database(DB_PATH, (err) => {
-    if (err) {
-        console.error("Database ချိတ်ဆက်မှု မအောင်မြင်ပါ- ", err.message);
-    } else {
-        console.log(`Connected to SQLite Database: ${DB_PATH}`);
-    }
-});
+        // Helper function to query D1 Database
+        async function getFeatureData(id) {
+            try {
+                const { results } = await env.DB.prepare(
+                    "SELECT title, description FROM cards WHERE id = ?",
+                )
+                    .bind(id)
+                    .all();
 
-// Helper function to query database
-const getFeatureData = (id, res) => {
-    db.get(
-        "SELECT title, description FROM cards WHERE id = ?",
-        [id],
-        (err, row) => {
-            if (err) {
-                return res.status(500).json({ error: err.message });
+                if (!results || results.length === 0) return null;
+                return results[0];
+            } catch (e) {
+                return null;
             }
-            if (!row) {
-                return res.status(404).json({ error: "Data not found" });
+        }
+
+        // API Endpoints Mapping
+        if (url.pathname === "/api/feature1") {
+            console.log("[API] /api/feature1 called");
+            try {
+                const data = await getFeatureData(1);
+                console.log("[API] getFeatureData(1) result:", data);
+                if (!data)
+                    return new Response(
+                        JSON.stringify({ error: "Data not found" }),
+                        { status: 404, headers: corsHeaders },
+                    );
+                return new Response(JSON.stringify(data), {
+                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                });
+            } catch (e) {
+                console.error("[API] /api/feature1 error:", e.message);
+                return new Response(
+                    JSON.stringify({ error: "Internal server error", detail: e.message }),
+                    { status: 500, headers: corsHeaders },
+                );
             }
-            res.json(row);
-        },
-    );
+        }
+
+        // if (url.pathname === "/api/feature2") {
+        //     const data = await getFeatureData(2);
+        //     if (!data)
+        //         return new Response(
+        //             JSON.stringify({ error: "Data not found" }),
+        //             { status: 404, headers: corsHeaders },
+        //         );
+        //     return new Response(JSON.stringify(data), {
+        //         headers: { ...corsHeaders, "Content-Type": "application/json" },
+        //     });
+        // }
+
+        // if (url.pathname === "/api/feature3") {
+        //     const data = await getFeatureData(3);
+        //     if (!data)
+        //         return new Response(
+        //             JSON.stringify({ error: "Data not found" }),
+        //             { status: 404, headers: corsHeaders },
+        //         );
+        //     return new Response(JSON.stringify(data), {
+        //         headers: { ...corsHeaders, "Content-Type": "application/json" },
+        //     });
+        // }
+
+        return new Response("Not Found", { status: 404, headers: corsHeaders });
+    },
 };
-
-// -------------------------------------------------------------
-// Git Workflow စမ်းသပ်ရန် API Endpoints များ
-// -------------------------------------------------------------
-
-// Feature 1 API
-app.get("/api/feature1", (req, res) => {
-    getFeatureData(1, res);
-});
-
-// Feature 2 API
-// app.get("/api/feature2", (req, res) => {
-//     getFeatureData(2, res);
-// });
-
-// Feature 3 API
-// app.get("/api/feature3", (req, res) => {
-//     getFeatureData(3, res);
-// });
-
-// Server နိုးခြင်း
-app.listen(PORT, () => {
-    console.log(`Backend Server is running on http://localhost:${PORT}`);
-});
