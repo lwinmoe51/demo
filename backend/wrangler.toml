@@ -1,0 +1,17 @@
+name = "demo-backend"
+main = "server.js"
+compatibility_date = "2026-07-11"
+account_id = "e6b30e5dc1351f10286e78d04cf44b65" # 👈 မင်းရဲ့ အကောင့် ID ကို ဒီမှာ ထည့်လိုက်ပါဗျာ
+
+# Production Environment (main branch အတွက်)
+[[d1_databases]]
+binding = "DB"
+database_name = "production-db"
+database_id = "bc8f633c-9815-4686-a156-3313d2ab9972"
+
+# Development Environment (develop branch အတွက်)
+[env.preview]
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "development-db"
+database_id = "096b7683-1c04-45a5-8df3-5fd847ef312c"
